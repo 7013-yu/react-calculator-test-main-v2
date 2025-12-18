@@ -10,7 +10,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   return (
-    <div className="flex flex-col min-h-screen bg-red-50 text-gray-800 border-purple-200">
+    <div className="flex flex-col min-h-screen bg-purple-50 text-gray-800 border-purple-200">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white shadow-lm border-b ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
