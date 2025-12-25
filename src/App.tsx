@@ -27,11 +27,40 @@ function App() {
     '±', '0', '.', '=',
   ];
 
+  const resetAll = () => {
+    setInput1("");    // 第一個數字清空
+    setInput2("");    // 第二個數字清空
+    setOp("");        // 運算符號清空
+    setAns(0);        // 答案歸零
+    setEg(false);     // 結束「等於」狀態
+  };
+
   const isNum = (sign: string) => {
     return !isNaN(parseFloat(sign))
   };
 
   const handleCalc = (sign: string) => {
+    if (sign === 'C' || sign === 'CE') {
+      resetAll();
+      return;
+      }
+    if ('⌫' === sign) {
+      if (eg) {
+        setInput1("");
+        setInput2("");
+        setOp("");
+        setAns(0);
+        setEg(false);
+        return;
+      }
+
+      if (op) {
+        setInput2(input2.slice(0, -1));
+      } else {
+        setInput1(input1.slice(0, -1));
+      }
+      return;
+    }
     if (isNum(sign)) {
       if (op){
         setInput2(input2 + sign);
@@ -44,10 +73,44 @@ function App() {
       setOp(sign);
       return;
     }
+    if ("−" === sign){
+      setOp(sign);
+      return;
+    }
+    if ("×" === sign){
+      setOp(sign);
+      return;
+    }
+    if ("÷" === sign){
+      setOp(sign);
+      return;
+    }
 
     if ("=" === sign){
       if ("+" === op){
         setAns(parseFloat(input1) + parseFloat(input2) );
+        setEg(true);
+      }
+      if ("−" === op){
+        setAns(parseFloat(input1) - parseFloat(input2) );
+        setEg(true);
+      }
+      if ("×" === op){
+        setAns(parseFloat(input1) * parseFloat(input2) );
+        setEg(true);
+      }
+      if ("÷" === op){
+        const num2 = parseFloat(input2);
+        
+        if (num2 === 0) {
+          alert("錯誤：除數不能為 0");
+          setInput1("");
+          setInput2("");
+          setOp("");
+          return;
+        }
+
+        setAns(parseFloat(input1) / num2);
         setEg(true);
       }
     }

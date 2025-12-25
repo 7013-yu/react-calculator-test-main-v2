@@ -17,6 +17,7 @@ const Layout = ({ children }: LayoutProps) => {
           <h1 className="text-xl font-bold text-indigo-600 tracking-wider">MyReactApp (TS)</h1>
           <nav className="space-x-4 text-sm font-large">
             <a href="#" className="hover:text-indigo-600 transition-colors">首頁</a>
+            <a href="#" className="hover:text-indigo-600 transition-colors">遊戲</a>
             <a href="#" className="hover:text-indigo-600 transition-colors">關於</a>
           </nav>
         </div>
