@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal } from './components/Modal';
 import { 
@@ -15,17 +14,9 @@ import type { Coordinates, Direction } from './types';
 
 function useInterval(callback: () => void, delay: number | null) {
   const savedCallback = useRef<() => void>(null);
-
+  useEffect(() => { savedCallback.current = callback; }, [callback]);
   useEffect(() => {
-    savedCallback.current = callback;
-  }, [callback]);
-
-  useEffect(() => {
-    function tick() {
-      if (savedCallback.current) {
-        savedCallback.current();
-      }
-    }
+    function tick() { if (savedCallback.current) savedCallback.current(); }
     if (delay !== null) {
       const id = setInterval(tick, delay);
       return () => clearInterval(id);
@@ -53,9 +44,7 @@ const MyGame: React.FC = () => {
       const onSnake = snakeBody.some(
         segment => segment.x === foodPosition.x && segment.y === foodPosition.y
       );
-      if (!onSnake) {
-        return foodPosition;
-      }
+      if (!onSnake) return foodPosition;
     }
   }, []);
 
@@ -105,129 +94,110 @@ const MyGame: React.FC = () => {
   useInterval(gameLoop, speed);
 
   const handleDirectionChange = useCallback((newDirection: Direction) => {
-      if (newDirection !== OPPOSITE_DIRECTIONS[direction]) {
-          setDirection(newDirection);
-      }
+    if (newDirection !== OPPOSITE_DIRECTIONS[direction]) {
+      setDirection(newDirection);
+    }
   }, [direction]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isGameStarted) return;
-      
       let newDirection: Direction | null = null;
       switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-          newDirection = 'UP';
-          break;
-        case 'ArrowDown':
-        case 's':
-          newDirection = 'DOWN';
-          break;
-        case 'ArrowLeft':
-        case 'a':
-          newDirection = 'LEFT';
-          break;
-        case 'ArrowRight':
-        case 'd':
-          newDirection = 'RIGHT';
-          break;
-        default:
-          return;
+        case 'ArrowUp': case 'w': newDirection = 'UP'; break;
+        case 'ArrowDown': case 's': newDirection = 'DOWN'; break;
+        case 'ArrowLeft': case 'a': newDirection = 'LEFT'; break;
+        case 'ArrowRight': case 'd': newDirection = 'RIGHT'; break;
+        default: return;
       }
       handleDirectionChange(newDirection);
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [direction, isGameStarted, handleDirectionChange]);
+  }, [isGameStarted, handleDirectionChange]);
   
+  // 💡 自動計算格子大小，適應容器尺寸
   useEffect(() => {
     const updateCellSize = () => {
-        if (boardRef.current) {
-            const width = boardRef.current.offsetWidth;
-            setCellSize(width / BOARD_SIZE);
-        }
+      if (boardRef.current) {
+        const width = boardRef.current.clientWidth;
+        setCellSize(width / BOARD_SIZE);
+      }
     };
     updateCellSize();
-    window.addEventListener('resize', updateCellSize);
-    return () => window.removeEventListener('resize', updateCellSize);
+    const resizeObserver = new ResizeObserver(updateCellSize);
+    if (boardRef.current) resizeObserver.observe(boardRef.current);
+    return () => resizeObserver.disconnect();
   }, []);
 
   const DPadButton: React.FC<{ dir: Direction, children: React.ReactNode, className?: string }> = ({ dir, children, className }) => (
     <button
       onClick={() => handleDirectionChange(dir)}
-      className={`bg-gray-700/80 hover:bg-teal-500/80 text-white font-bold rounded-md flex items-center justify-center transition-all duration-200 aspect-square ${className}`}
-      aria-label={`Move ${dir.toLowerCase()}`}
+      className={`bg-gray-700/80 active:bg-teal-500 text-white font-bold rounded-md flex items-center justify-center transition-all aspect-square ${className}`}
     >
       {children}
     </button>
   );
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 font-mono select-none">
-      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl flex flex-col items-center">
-        <header className="w-full flex justify-between items-center mb-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-          <h1 className="text-xl md:text-3xl font-bold text-teal-400">Greedy Snake</h1>
-          <div className="text-xl md:text-3xl font-bold">
-            Score: <span className="text-green-400">{score}</span>
-          </div>
-        </header>
+    <div className="flex flex-col items-center justify-center w-full max-h-full font-mono select-none">
+      {/* 1. 分數與標題：縮小間距 */}
+      <header className="w-full max-w-md flex justify-between items-center mb-2 p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+        <h1 className="text-lg font-bold text-teal-400">Greedy Snake</h1>
+        <div className="text-lg font-bold">Score: <span className="text-green-400">{score}</span></div>
+      </header>
 
-        <div ref={boardRef} className="w-full aspect-square bg-gray-900 border-4 border-teal-500 shadow-lg shadow-teal-500/10 relative">
-          {snake.map((segment, index) => (
-            <div
-              key={index}
-              className={`absolute rounded-sm transition-all duration-75 ${index === 0 ? 'bg-green-400' : 'bg-green-600'}`}
-              style={{
-                left: `${segment.x * cellSize}px`,
-                top: `${segment.y * cellSize}px`,
-                width: `${cellSize}px`,
-                height: `${cellSize}px`,
-                zIndex: index === 0 ? 10 : 5,
-              }}
-            />
-          ))}
+      {/* 2. 遊戲畫板：使用 vh 限制高度，確保不產生捲軸 */}
+      <div 
+        ref={boardRef} 
+        className="relative bg-gray-900 border-4 border-teal-500 shadow-lg shadow-teal-500/20 overflow-hidden"
+        style={{
+          width: 'min(80vw, calc(100vh - 320px))',
+          height: 'min(80vw, calc(100vh - 320px))',
+        }}
+      >
+        {snake.map((segment, index) => (
           <div
-            className="absolute bg-red-500 rounded-full"
+            key={index}
+            className={`absolute rounded-sm ${index === 0 ? 'bg-green-400 z-10' : 'bg-green-600 z-5'}`}
             style={{
-              left: `${food.x * cellSize}px`,
-              top: `${food.y * cellSize}px`,
+              left: `${segment.x * cellSize}px`,
+              top: `${segment.y * cellSize}px`,
               width: `${cellSize}px`,
               height: `${cellSize}px`,
-              boxShadow: '0 0 8px #f56565',
             }}
           />
-        </div>
-
-        <div className="mt-6 w-48 h-48 grid grid-cols-3 grid-rows-3 gap-2 md:hidden">
-          <DPadButton dir="UP" className="col-start-2">▲</DPadButton>
-          <DPadButton dir="LEFT" className="row-start-2">◄</DPadButton>
-          <DPadButton dir="DOWN" className="col-start-2 row-start-3">▼</DPadButton>
-          <DPadButton dir="RIGHT" className="col-start-3 row-start-2">►</DPadButton>
-        </div>
-        <p className="hidden md:block mt-4 text-gray-500">Use Arrow Keys or WASD to move</p>
+        ))}
+        <div
+          className="absolute bg-red-500 rounded-full"
+          style={{
+            left: `${food.x * cellSize}px`,
+            top: `${food.y * cellSize}px`,
+            width: `${cellSize}px`,
+            height: `${cellSize}px`,
+            boxShadow: '0 0 8px #f56565',
+          }}
+        />
       </div>
 
+      {/* 3. 控制區：電腦隱藏，手機縮小 */}
+      <div className="mt-4 w-32 h-32 grid grid-cols-3 grid-rows-3 gap-1 md:hidden">
+        <DPadButton dir="UP" className="col-start-2">▲</DPadButton>
+        <DPadButton dir="LEFT" className="row-start-2">◄</DPadButton>
+        <DPadButton dir="DOWN" className="col-start-2 row-start-3">▼</DPadButton>
+        <DPadButton dir="RIGHT" className="col-start-3 row-start-2">►</DPadButton>
+      </div>
+      <p className="hidden md:block mt-2 text-xs text-gray-500">Use Arrows or WASD</p>
+
+      {/* Modals */}
       <Modal title="Greedy Snake" isOpen={!isGameStarted && !isGameOver}>
-        <p className="text-gray-300">Eat the red pellets to grow and increase your score. Avoid hitting the walls or your own tail!</p>
-        <button
-          onClick={resetGame}
-          className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-lg text-xl transition-transform transform hover:scale-105"
-        >
-          Start Game
-        </button>
+        <p className="text-gray-300 text-sm mb-4">Eat red pellets to grow. Don't hit walls or your tail!</p>
+        <button onClick={resetGame} className="w-full bg-teal-600 text-white font-bold py-2 rounded-lg hover:bg-teal-500">Start Game</button>
       </Modal>
 
       <Modal title="Game Over" isOpen={isGameOver}>
-        <p className="text-gray-300 text-lg">Your final score is:</p>
-        <p className="text-5xl font-bold text-green-400 my-4">{score}</p>
-        <button
-          onClick={resetGame}
-          className="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-4 rounded-lg text-xl transition-transform transform hover:scale-105"
-        >
-          Play Again
-        </button>
+        <p className="text-gray-300">Final Score: <span className="text-green-400 font-bold">{score}</span></p>
+        <button onClick={resetGame} className="w-full mt-4 bg-teal-600 text-white font-bold py-2 rounded-lg hover:bg-teal-500">Play Again</button>
       </Modal>
     </div>
   );
