@@ -40,3 +40,11 @@
 .read-the-docs {
   color: #888;
 }
+
+/* 強制鎖定網頁高度，禁止任何溢出產生的捲動 */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 徹底禁止全頁捲動 */
+}

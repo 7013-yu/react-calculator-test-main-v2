@@ -39,7 +39,7 @@ const Layout = ({ children }: LayoutProps) => {
         {/* 計算機模式內容區 */}
         <div className={`flex-grow w-full ${isGame ? '' : 'max-w-7xl mx-auto px-4 py-8'}`}>
           {isGame ? (
-            <div className="flex justify-center items-start pt-10 pb-10">
+            <div className="w-full h-full flex flex-col justify-center items-center">
               <MyGame />
             </div>
           ) : (
@@ -50,13 +50,15 @@ const Layout = ({ children }: LayoutProps) => {
       </main>
 
         {/* Footer */}
-        {!isGame && (
-        <footer className="flex-none transition-colors bg-white border-t border-gray-200 py-2 text-center text-gray-500 text-xs hover:bg-gray-100">
+        <footer className={`flex-none transition-colors py-2 text-center text-xs border-t 
+          ${isGame 
+            ? 'bg-gray-900 border-gray-800 text-gray-500' 
+            : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-100'}`}>
           <div className="max-w-7xl mx-auto px-4">
             &copy; {new Date().getFullYear()} React + TypeScript + Tailwind v4.
           </div>
         </footer>
-      )}
+        
     </div>
   );
 };
